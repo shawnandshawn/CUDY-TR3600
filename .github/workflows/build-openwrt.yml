@@ -30,6 +30,7 @@ jobs:
           test -e package/feeds/istore/luci-app-store
           test -e package/feeds/istore/luci-lib-taskd
           test -e package/feeds/istore/taskd
+          sed -i 's/ +mount-utils//' package/feeds/istore/luci-app-store/Makefile
 
       - name: Generate and Validate TR3600 iStore Config
         run: |
@@ -46,7 +47,6 @@ jobs:
           CONFIG_PACKAGE_script-utils=y
           CONFIG_PACKAGE_coreutils=y
           CONFIG_PACKAGE_coreutils-stty=y
-          CONFIG_PACKAGE_mount-utils=y
           CONFIG_PACKAGE_libuci-lua=y
           CONFIG_PACKAGE_curl=y
           CONFIG_PACKAGE_tar=y
