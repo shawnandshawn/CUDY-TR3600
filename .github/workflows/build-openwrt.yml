@@ -28,13 +28,13 @@ jobs:
           ./scripts/feeds install -a
           ./scripts/feeds install -d y -p istore luci-app-store
 
-      - name: Generate Config
+      - name: Generate and Validate TR3600 Config
         run: |
           cd openwrt
           cat <<EOF > .config
           CONFIG_TARGET_mediatek=y
           CONFIG_TARGET_mediatek_filogic=y
-          CONFIG_TARGET_DEVICE_mediatek_filogic_DEVICE_cudy_tr3600-v1=y
+          CONFIG_TARGET_mediatek_filogic_DEVICE_cudy_tr3600-v1=y
           CONFIG_PACKAGE_luci=y
           CONFIG_PACKAGE_luci-i18n-base-zh-cn=y
           CONFIG_PACKAGE_luci-app-passwall=y
@@ -44,6 +44,8 @@ jobs:
           CONFIG_PACKAGE_luci-app-store=y
           EOF
           make defconfig
+          grep -q '^CONFIG_TARGET_mediatek_filogic_DEVICE_cudy_tr3600-v1=y$' .config
+          ! grep -q '^CONFIG_TARGET_mediatek_filogic_DEVICE_openwrt_one=y$' .config
 
       - name: Download Package Dependencies
         run: |
@@ -55,9 +57,19 @@ jobs:
           cd openwrt
           make -j$(nproc) || make -j1 V=s
 
-      - name: Upload Firmware to Artifacts
+      - name: Validate and Collect TR3600 Firmware
+        run: |
+          cd openwrt
+          target_dir=bin/targets/mediatek/filogic
+          test -n "$(find "$target_dir" -maxdepth 1 -type f -name '*cudy_tr3600-v1*sysupgrade.bin' -print -quit)"
+          mkdir -p firmware
+          find "$target_dir" -maxdepth 1 -type f -name '*cudy_tr3600-v1*' -exec cp {} firmware/ \;
+          sha256sum firmware/* > firmware/SHA256SUMS
+          ls -lh firmware
+
+      - name: Upload TR3600 Firmware Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Cudy-TR3600-Firmware-with-iStore
-          path: openwrt/bin/targets/mediatek/filogic/*
+          name: Cudy-TR3600-V1-Firmware-with-iStore
+          path: openwrt/firmware/*
           retention-days: 7
