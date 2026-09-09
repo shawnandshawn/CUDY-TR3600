@@ -57,46 +57,7 @@ jobs:
           make defconfig
           grep -n -B5 -A25 'config PACKAGE_luci-app-store' tmp/.config-package.in || true
           grep -E 'CONFIG_PACKAGE_(luci-app-store|luci-lib-taskd|taskd|luci-compat|mount-utils)' .config || true
-          grep -q '^CONFIG_TARGET_mediatek_filogic_DEVICE_cudy_tr3600-v1=y
-          grep -q '^CONFIG_PACKAGE_luci-app-store=y$' .config
-          grep -q '^CONFIG_PACKAGE_luci-lib-taskd=y$' .config
-          grep -q '^CONFIG_PACKAGE_taskd=y$' .config
-          ! grep -q '^CONFIG_TARGET_mediatek_filogic_DEVICE_openwrt_one=y$' .config
-
-      - name: Download Package Dependencies
-        run: |
-          cd openwrt
-          make download -j8
-
-      - name: Compile Firmware
-        run: |
-          cd openwrt
-          make -j$(nproc) || make -j1 V=s
-
-      - name: Verify iStore Manifest and Collect Firmware
-        run: |
-          cd openwrt
-          target_dir=bin/targets/mediatek/filogic
-          firmware_file=$(find "$target_dir" -maxdepth 1 -type f -name '*cudy_tr3600-v1*sysupgrade.bin' -print -quit)
-          manifest_file=$(find "$target_dir" -maxdepth 1 -type f -name '*cudy_tr3600-v1.manifest' -print -quit)
-          test -n "$firmware_file"
-          test -n "$manifest_file"
-          grep -q '^luci-app-store ' "$manifest_file"
-          grep -q '^luci-lib-taskd ' "$manifest_file"
-          grep -q '^taskd ' "$manifest_file"
-          mkdir -p firmware
-          cp "$firmware_file" "$manifest_file" firmware/
-          sha256sum firmware/* > firmware/SHA256SUMS
-          ls -lh firmware
-          grep -E '^(luci-app-store|luci-lib-taskd|taskd) ' "$manifest_file"
-
-      - name: Upload Verified TR3600 iStore Firmware
-        uses: actions/upload-artifact@v4
-        with:
-          name: Cudy-TR3600-V1-Verified-iStore
-          path: openwrt/firmware/*
-          retention-days: 7
- .config
+          grep -q '^CONFIG_TARGET_mediatek_filogic_DEVICE_cudy_tr3600-v1=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-store=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-lib-taskd=y$' .config
           grep -q '^CONFIG_PACKAGE_taskd=y$' .config
