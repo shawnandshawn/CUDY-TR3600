@@ -45,10 +45,6 @@ jobs:
           CONFIG_PACKAGE_taskd=y
           EOF
           make defconfig
-          ./scripts/config --enable PACKAGE_luci-app-store
-          ./scripts/config --enable PACKAGE_luci-lib-taskd
-          ./scripts/config --enable PACKAGE_taskd
-          make defconfig
           grep -q '^CONFIG_TARGET_mediatek_filogic_DEVICE_cudy_tr3600-v1=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-app-store=y$' .config
           grep -q '^CONFIG_PACKAGE_luci-lib-taskd=y$' .config
