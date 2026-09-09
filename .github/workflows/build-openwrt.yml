@@ -26,7 +26,7 @@ jobs:
           echo 'src-git istore https://github.com/linkease/istore;main' >> feeds.conf.default
           ./scripts/feeds update -a
           ./scripts/feeds install -a
-          ./scripts/feeds install -f -p istore luci-app-store luci-lib-taskd taskd
+          ./scripts/feeds install -d y -f -p istore luci-app-store
           test -e package/feeds/istore/luci-app-store
           test -e package/feeds/istore/luci-lib-taskd
           test -e package/feeds/istore/taskd
@@ -40,6 +40,16 @@ jobs:
           CONFIG_TARGET_mediatek_filogic_DEVICE_cudy_tr3600-v1=y
           CONFIG_PACKAGE_luci=y
           CONFIG_PACKAGE_luci-i18n-base-zh-cn=y
+          CONFIG_PACKAGE_luci-compat=y
+          CONFIG_PACKAGE_luci-lua-runtime=y
+          CONFIG_PACKAGE_luci-lib-xterm=y
+          CONFIG_PACKAGE_script-utils=y
+          CONFIG_PACKAGE_coreutils=y
+          CONFIG_PACKAGE_coreutils-stty=y
+          CONFIG_PACKAGE_mount-utils=y
+          CONFIG_PACKAGE_libuci-lua=y
+          CONFIG_PACKAGE_curl=y
+          CONFIG_PACKAGE_tar=y
           CONFIG_PACKAGE_luci-app-store=y
           CONFIG_PACKAGE_luci-lib-taskd=y
           CONFIG_PACKAGE_taskd=y
