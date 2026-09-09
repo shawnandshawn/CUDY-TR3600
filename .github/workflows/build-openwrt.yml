@@ -1,4 +1,4 @@
-name: Build Cudy TR3600 OpenWrt with Passwall and iStore
+name: Build Cudy TR3600 OpenWrt with Verified iStore
 
 on:
   workflow_dispatch:
@@ -20,15 +20,18 @@ jobs:
         run: |
           git clone -b agent/cudy-tr3600-v1-6.12 --single-branch https://github.com/soapmancn/openwrt.git openwrt
 
-      - name: Add iStore Feed and Install Feeds
+      - name: Add Official iStore Feed
         run: |
           cd openwrt
           echo 'src-git istore https://github.com/linkease/istore;main' >> feeds.conf.default
           ./scripts/feeds update -a
           ./scripts/feeds install -a
-          ./scripts/feeds install -d y -p istore luci-app-store
+          ./scripts/feeds install -f -p istore luci-app-store luci-lib-taskd taskd
+          test -e package/feeds/istore/luci-app-store
+          test -e package/feeds/istore/luci-lib-taskd
+          test -e package/feeds/istore/taskd
 
-      - name: Generate and Validate TR3600 Config
+      - name: Generate and Validate TR3600 iStore Config
         run: |
           cd openwrt
           cat <<EOF > .config
@@ -37,14 +40,19 @@ jobs:
           CONFIG_TARGET_mediatek_filogic_DEVICE_cudy_tr3600-v1=y
           CONFIG_PACKAGE_luci=y
           CONFIG_PACKAGE_luci-i18n-base-zh-cn=y
-          CONFIG_PACKAGE_luci-app-passwall=y
-          CONFIG_PACKAGE_luci-i18n-passwall-zh-cn=y
-          CONFIG_PACKAGE_luci-app-passwall_INCLUDE_Xray=y
-          CONFIG_PACKAGE_luci-app-passwall_INCLUDE_SingBox=y
           CONFIG_PACKAGE_luci-app-store=y
+          CONFIG_PACKAGE_luci-lib-taskd=y
+          CONFIG_PACKAGE_taskd=y
           EOF
           make defconfig
+          ./scripts/config --enable PACKAGE_luci-app-store
+          ./scripts/config --enable PACKAGE_luci-lib-taskd
+          ./scripts/config --enable PACKAGE_taskd
+          make defconfig
           grep -q '^CONFIG_TARGET_mediatek_filogic_DEVICE_cudy_tr3600-v1=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-app-store=y$' .config
+          grep -q '^CONFIG_PACKAGE_luci-lib-taskd=y$' .config
+          grep -q '^CONFIG_PACKAGE_taskd=y$' .config
           ! grep -q '^CONFIG_TARGET_mediatek_filogic_DEVICE_openwrt_one=y$' .config
 
       - name: Download Package Dependencies
@@ -57,19 +65,26 @@ jobs:
           cd openwrt
           make -j$(nproc) || make -j1 V=s
 
-      - name: Validate and Collect TR3600 Firmware
+      - name: Verify iStore Manifest and Collect Firmware
         run: |
           cd openwrt
           target_dir=bin/targets/mediatek/filogic
-          test -n "$(find "$target_dir" -maxdepth 1 -type f -name '*cudy_tr3600-v1*sysupgrade.bin' -print -quit)"
+          firmware_file=$(find "$target_dir" -maxdepth 1 -type f -name '*cudy_tr3600-v1*sysupgrade.bin' -print -quit)
+          manifest_file=$(find "$target_dir" -maxdepth 1 -type f -name '*cudy_tr3600-v1.manifest' -print -quit)
+          test -n "$firmware_file"
+          test -n "$manifest_file"
+          grep -q '^luci-app-store ' "$manifest_file"
+          grep -q '^luci-lib-taskd ' "$manifest_file"
+          grep -q '^taskd ' "$manifest_file"
           mkdir -p firmware
-          find "$target_dir" -maxdepth 1 -type f -name '*cudy_tr3600-v1*' -exec cp {} firmware/ \;
+          cp "$firmware_file" "$manifest_file" firmware/
           sha256sum firmware/* > firmware/SHA256SUMS
           ls -lh firmware
+          grep -E '^(luci-app-store|luci-lib-taskd|taskd) ' "$manifest_file"
 
-      - name: Upload TR3600 Firmware Artifact
+      - name: Upload Verified TR3600 iStore Firmware
         uses: actions/upload-artifact@v4
         with:
-          name: Cudy-TR3600-V1-Firmware-with-iStore
+          name: Cudy-TR3600-V1-Verified-iStore
           path: openwrt/firmware/*
           retention-days: 7
